@@ -21,6 +21,7 @@ enum class ErrorCode(
 
     // 회원
     DUPLICATE_EMAIL(409, "이미 가입된 이메일입니다."),
+    MEMBER_NOT_FOUND(404, "회원을 찾을 수 없습니다."),
 
     // 리뷰
     REVIEW_ALREADY_EXISTS(409, "이미 해당 향수에 대한 리뷰가 존재합니다."),

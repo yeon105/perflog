@@ -2,19 +2,23 @@ package com.perflog.domain.review.service
 
 import com.perflog.common.error.CustomException
 import com.perflog.common.error.ErrorCode
+import com.perflog.domain.member.repository.MemberRepository
 import com.perflog.domain.review.dto.ReviewDto
 import com.perflog.domain.review.model.Review
 import com.perflog.domain.review.repository.ReviewRepository
 import org.springframework.stereotype.Service
-import java.time.LocalDateTime
 
 @Service
 class ReviewService(
-    private val reviewRepository: ReviewRepository
+    private val reviewRepository: ReviewRepository,
+    private val memberRepository: MemberRepository
 ) {
 
     fun createReview(request: ReviewDto.CreateRequest): Unit {
-        if (reviewRepository.existsByUserIdAndPerfumeId(request.userId, request.perfumeId)) {
+        val member = memberRepository.findById(request.memberId)
+            .orElseThrow { CustomException(ErrorCode.MEMBER_NOT_FOUND) }
+
+        if (reviewRepository.existsByMemberAndPerfumeId(member, request.perfumeId)) {
             throw CustomException(ErrorCode.REVIEW_ALREADY_EXISTS)
         }
 
@@ -23,7 +27,7 @@ class ReviewService(
         }
 
         val review = Review(
-            userId = request.userId,
+            member = member,
             perfumeId = request.perfumeId,
             rating = request.rating,
             content = request.content
@@ -33,18 +37,21 @@ class ReviewService(
     }
 
     fun updateReview(id: Long, request: ReviewDto.UpdateRequest): ReviewDto.Response {
+        if (!memberRepository.existsById(request.memberId)) {
+            throw CustomException(ErrorCode.MEMBER_NOT_FOUND)
+        }
+
         val review = reviewRepository.findById(id)
             .orElseThrow { CustomException(ErrorCode.REVIEW_NOT_FOUND) }
 
         review.rating = request.rating
         review.content = request.content
-        review.updatedAt = LocalDateTime.now()
 
         val savedReview = reviewRepository.save(review)
 
         return ReviewDto.Response(
             id = savedReview.id,
-            userId = savedReview.userId,
+            memberId = savedReview.member.id,
             perfumeId = savedReview.perfumeId,
             rating = savedReview.rating,
             content = savedReview.content,
@@ -66,7 +73,7 @@ class ReviewService(
         return reviews.map { review ->
             ReviewDto.Response(
                 id = review.id,
-                userId = review.userId,
+                memberId = review.member.id,
                 perfumeId = review.perfumeId,
                 rating = review.rating,
                 content = review.content,

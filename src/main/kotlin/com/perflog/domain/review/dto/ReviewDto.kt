@@ -5,7 +5,7 @@ import java.time.LocalDateTime
 class ReviewDto {
     // 리뷰 생성
     data class CreateRequest(
-        val userId: Long,
+        val memberId: Long,
         val perfumeId: Long,
         val rating: Int,
         val content: String
@@ -13,7 +13,7 @@ class ReviewDto {
 
     // 리뷰 수정
     data class UpdateRequest(
-        val userId: Long,
+        val memberId: Long,
         val perfumeId: Long,
         val rating: Int,
         val content: String
@@ -22,7 +22,7 @@ class ReviewDto {
     // 응답 공통 DTO
     data class Response(
         val id: Long,
-        val userId: Long,
+        val memberId: Long,
         val perfumeId: Long,
         val rating: Int,
         val content: String,

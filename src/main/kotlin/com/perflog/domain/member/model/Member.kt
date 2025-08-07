@@ -1,9 +1,10 @@
 package com.perflog.domain.member.model
 
+import com.perflog.domain.review.model.Review
 import jakarta.persistence.*
 
 @Entity
-@Table(name = "member")
+@Table(name = "members")
 class Member(
 
     @Column(name = "email", nullable = false, length = 100)
@@ -21,6 +22,8 @@ class Member(
 ) {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
-    var id: Long? = null
+    var id: Long = 0
+
+    @OneToMany(mappedBy = "member")
+    var reviews: MutableList<Review> = mutableListOf()
 }

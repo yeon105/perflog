@@ -1,6 +1,7 @@
 package com.perflog.domain.review.model
 
 import com.perflog.common.model.BaseTimeEntity
+import com.perflog.domain.member.model.Member
 import jakarta.persistence.*
 
 @Entity
@@ -11,8 +12,9 @@ class Review(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
 
-    @Column(name = "user_id", nullable = false)
-    val userId: Long = 0,
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "member_id", nullable = false)
+    var member: Member,
 
     @Column(name = "perfume_id", nullable = false)
     val perfumeId: Long = 0,
