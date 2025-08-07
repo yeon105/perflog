@@ -1,0 +1,79 @@
+package com.perflog.config.security
+
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.perflog.config.security.jwt.JwtAuthFilter
+import com.perflog.config.security.jwt.JwtUtil
+import com.perflog.config.security.jwt.LoginFilter
+import com.perflog.domain.member.repository.RefreshTokenRepository
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
+import org.springframework.security.authentication.AuthenticationManager
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
+import org.springframework.security.config.annotation.web.builders.HttpSecurity
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
+import org.springframework.security.config.http.SessionCreationPolicy
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
+import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.security.web.SecurityFilterChain
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
+import org.springframework.web.cors.CorsConfiguration
+
+@Configuration
+@EnableWebSecurity
+@EnableMethodSecurity(prePostEnabled = false, securedEnabled = true)
+class SecurityConfig(
+    private val authenticationConfiguration: AuthenticationConfiguration,
+    private val jwtUtil: JwtUtil,
+    private val refreshTokenRepository: RefreshTokenRepository,
+    private val objectMapper: ObjectMapper
+) {
+
+    @Bean
+    fun authenticationManager(): AuthenticationManager {
+        return authenticationConfiguration.authenticationManager
+    }
+
+    @Bean
+    fun passwordEncoder(): PasswordEncoder = BCryptPasswordEncoder()
+
+    @Bean
+    fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
+        http.csrf { csrf -> csrf.disable() }
+            .formLogin { formLogin -> formLogin.disable() }
+            .httpBasic { httpBasic -> httpBasic.disable() }
+            .authorizeHttpRequests { auth ->
+                auth.requestMatchers(
+                    "/", "/api/member/login", "/api/member/join", "/api/member/refresh",
+                    "/api/reviews/perfume/{perfumeId}", "/api/reviews/perfume/{perfumeId}/summary"
+                ).permitAll()
+                    .requestMatchers("/api/member/logout", "/api/reviews", "/api/reviews/{reviewId}")
+                    .hasAnyRole("USER", "ADMIN")
+                    .anyRequest().authenticated()
+            }
+            .cors { cors ->
+                cors.configurationSource {
+                    CorsConfiguration().apply {
+                        allowedOrigins = listOf("http://localhost:3000")
+                        allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                        allowCredentials = true
+                        addExposedHeader("Set-Cookie")
+                        addAllowedHeader("*")
+                    }
+                }
+            }
+            .sessionManagement { session ->
+                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            }
+            .addFilterAt(
+                LoginFilter(authenticationManager(), jwtUtil, refreshTokenRepository, objectMapper),
+                UsernamePasswordAuthenticationFilter::class.java
+            )
+            .addFilterBefore(
+                JwtAuthFilter(jwtUtil),
+                UsernamePasswordAuthenticationFilter::class.java
+            )
+
+        return http.build()
+    }
+}
