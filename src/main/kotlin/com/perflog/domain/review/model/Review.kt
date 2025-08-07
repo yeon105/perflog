@@ -1,7 +1,7 @@
-package com.perflog.domain.review
+package com.perflog.domain.review.model
 
+import com.perflog.common.model.BaseTimeEntity
 import jakarta.persistence.*
-import java.time.LocalDateTime
 
 @Entity
 @Table(name = "reviews")
@@ -21,11 +21,5 @@ class Review(
     var rating: Int,
 
     @Column(columnDefinition = "TEXT")
-    var content: String,
-
-    @Column(name = "created_at")
-    val createdAt: LocalDateTime = LocalDateTime.now(),
-
-    @Column(name = "updated_at")
-    var updatedAt: LocalDateTime = LocalDateTime.now()
-)
+    var content: String
+) : BaseTimeEntity()

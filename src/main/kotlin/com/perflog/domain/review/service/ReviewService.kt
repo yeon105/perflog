@@ -1,5 +1,10 @@
-package com.perflog.domain.review
+package com.perflog.domain.review.service
 
+import com.perflog.common.error.CustomException
+import com.perflog.common.error.ErrorCode
+import com.perflog.domain.review.dto.ReviewDto
+import com.perflog.domain.review.model.Review
+import com.perflog.domain.review.repository.ReviewRepository
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
 
@@ -10,11 +15,11 @@ class ReviewService(
 
     fun createReview(request: ReviewDto.CreateRequest): Unit {
         if (reviewRepository.existsByUserIdAndPerfumeId(request.userId, request.perfumeId)) {
-            throw IllegalStateException("이미 해당 향수에 대한 리뷰가 존재합니다.")
+            throw CustomException(ErrorCode.REVIEW_ALREADY_EXISTS)
         }
 
         if (request.rating !in 1..5) {
-            throw IllegalArgumentException("평점은 1-5 사이여야 합니다.")
+            throw CustomException(ErrorCode.INVALID_RATING)
         }
 
         val review = Review(
@@ -29,7 +34,7 @@ class ReviewService(
 
     fun updateReview(id: Long, request: ReviewDto.UpdateRequest): ReviewDto.Response {
         val review = reviewRepository.findById(id)
-            .orElseThrow { IllegalArgumentException("리뷰를 찾을 수 없습니다.") }
+            .orElseThrow { CustomException(ErrorCode.REVIEW_NOT_FOUND) }
 
         review.rating = request.rating
         review.content = request.content
@@ -53,7 +58,12 @@ class ReviewService(
     }
 
     fun getReviewsByPerfume(perfumeId: Long): List<ReviewDto.Response> {
-        return reviewRepository.findByPerfumeId(perfumeId).map { review ->
+        val reviews = reviewRepository.findByPerfumeId(perfumeId)
+        if (reviews.isEmpty()) {
+            throw CustomException(ErrorCode.REVIEW_NOT_FOUND)
+        }
+
+        return reviews.map { review ->
             ReviewDto.Response(
                 id = review.id,
                 userId = review.userId,
@@ -68,8 +78,11 @@ class ReviewService(
 
     fun getReviewSummary(perfumeId: Long): ReviewDto.Summary {
         val reviews = reviewRepository.findByPerfumeId(perfumeId)
-        val total = reviews.size
-        val avg = if (total > 0) reviews.map { it.rating }.average() else 0.0
+        if (reviews.isEmpty()) {
+            throw CustomException(ErrorCode.REVIEW_NOT_FOUND)
+        }
+
+        val avg = reviews.map { it.rating }.average()
         val distribution = reviews.groupingBy { it.rating }.eachCount()
 
         return ReviewDto.Summary(

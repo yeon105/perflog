@@ -1,4 +1,4 @@
-package com.perflog.domain.review
+package com.perflog.domain.review.dto
 
 import java.time.LocalDateTime
 
