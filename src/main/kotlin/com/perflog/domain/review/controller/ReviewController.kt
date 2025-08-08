@@ -1,5 +1,7 @@
-package com.perflog.domain.review
+package com.perflog.domain.review.controller
 
+import com.perflog.domain.review.dto.ReviewDto
+import com.perflog.domain.review.service.ReviewService
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
