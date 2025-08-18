@@ -1,7 +1,7 @@
 package com.perflog.domain.perfume.controller
 
 import com.perflog.domain.perfume.dto.PerfumeDto
-import com.perflog.domain.perfume.service.PerfumeServiceImpl
+import com.perflog.domain.perfume.service.PerfumeService
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @RequestMapping("/api/perfumes")
 class PerfumeController(
-    private val perfumeService: PerfumeServiceImpl
+    private val perfumeService: PerfumeService
 ) {
     @PostMapping
     fun create(@RequestBody request: PerfumeDto.CreateRequest): ResponseEntity<Void> {
