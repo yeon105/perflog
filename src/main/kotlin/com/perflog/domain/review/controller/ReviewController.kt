@@ -14,7 +14,7 @@ class ReviewController(
 
     @PostMapping
     fun createReview(@RequestBody request: ReviewDto.CreateRequest): ResponseEntity<Void> {
-        reviewService.createReview(request)
+        reviewService.create(request)
         return ResponseEntity.status(HttpStatus.CREATED).build()
     }
 
@@ -23,25 +23,25 @@ class ReviewController(
         @PathVariable reviewId: Long,
         @RequestBody request: ReviewDto.UpdateRequest
     ): ResponseEntity<ReviewDto.Response> {
-        val response = reviewService.updateReview(reviewId, request)
+        val response = reviewService.update(reviewId, request)
         return ResponseEntity.ok(response)
     }
 
     @DeleteMapping("/{reviewId}")
     fun deleteReview(@PathVariable reviewId: Long): ResponseEntity<Void> {
-        reviewService.deleteReview(reviewId)
+        reviewService.delete(reviewId)
         return ResponseEntity.noContent().build()
     }
 
     @GetMapping("/perfume/{perfumeId}")
     fun getReviewsByPerfume(@PathVariable perfumeId: Long): ResponseEntity<List<ReviewDto.Response>> {
-        val reviews = reviewService.getReviewsByPerfume(perfumeId)
+        val reviews = reviewService.getByPerfume(perfumeId)
         return ResponseEntity.ok(reviews)
     }
 
     @GetMapping("/perfume/{perfumeId}/summary")
     fun getReviewSummary(@PathVariable perfumeId: Long): ResponseEntity<ReviewDto.Summary> {
-        val summary = reviewService.getReviewSummary(perfumeId)
+        val summary = reviewService.getSummary(perfumeId)
         return ResponseEntity.ok(summary)
     }
 }
