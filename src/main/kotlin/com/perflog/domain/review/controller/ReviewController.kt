@@ -4,6 +4,7 @@ import com.perflog.domain.review.dto.ReviewDto
 import com.perflog.domain.review.service.ReviewService
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
 
 @RestController
@@ -21,21 +22,24 @@ class ReviewController(
     @PutMapping("/{reviewId}")
     fun updateReview(
         @PathVariable reviewId: Long,
-        @RequestBody request: ReviewDto.UpdateRequest
+        @RequestBody request: ReviewDto.UpdateRequest, authentication: Authentication
     ): ResponseEntity<ReviewDto.Response> {
-        val response = reviewService.update(reviewId, request)
+        val response = reviewService.update(reviewId, request, authentication)
         return ResponseEntity.ok(response)
     }
 
     @DeleteMapping("/{reviewId}")
-    fun deleteReview(@PathVariable reviewId: Long): ResponseEntity<Void> {
-        reviewService.delete(reviewId)
+    fun deleteReview(
+        @PathVariable reviewId: Long,
+        authentication: Authentication
+    ): ResponseEntity<Void> {
+        reviewService.delete(reviewId, authentication)
         return ResponseEntity.noContent().build()
     }
 
     @GetMapping("/perfume/{perfumeId}")
     fun getReviewsByPerfume(@PathVariable perfumeId: Long): ResponseEntity<List<ReviewDto.Response>> {
-        val reviews = reviewService.getByPerfume(perfumeId)
+        val reviews = reviewService.getReviewsByPerfumeId(perfumeId)
         return ResponseEntity.ok(reviews)
     }
 

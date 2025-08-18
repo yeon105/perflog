@@ -7,8 +7,11 @@ import com.perflog.domain.perfume.repository.PerfumeRepository
 import com.perflog.domain.review.dto.ReviewDto
 import com.perflog.domain.review.model.Review
 import com.perflog.domain.review.repository.ReviewRepository
+import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 
+@Transactional
 @Service
 class ReviewServiceImpl(
     private val reviewRepository: ReviewRepository,
@@ -16,7 +19,7 @@ class ReviewServiceImpl(
     private val perfumeRepository: PerfumeRepository,
 ) : ReviewService {
 
-    override fun create(request: ReviewDto.CreateRequest): Unit {
+    override fun create(request: ReviewDto.CreateRequest) {
         val member = memberRepository.findById(request.memberId)
             .orElseThrow { CustomException(ErrorCode.MEMBER_NOT_FOUND) }
 
@@ -41,13 +44,19 @@ class ReviewServiceImpl(
         reviewRepository.save(review)
     }
 
-    override fun update(id: Long, request: ReviewDto.UpdateRequest): ReviewDto.Response {
-        if (!memberRepository.existsById(request.memberId)) {
-            throw CustomException(ErrorCode.MEMBER_NOT_FOUND)
-        }
-
+    override fun update(
+        id: Long,
+        request: ReviewDto.UpdateRequest,
+        authentication: Authentication
+    ): ReviewDto.Response {
         val review = reviewRepository.findById(id)
             .orElseThrow { CustomException(ErrorCode.REVIEW_NOT_FOUND) }
+
+        val currentEmail = authentication.name
+        val authorEmail = review.member.email
+        if (authorEmail != currentEmail) {
+            throw CustomException(ErrorCode.FORBIDDEN)
+        }
 
         review.rating = request.rating
         review.content = request.content
@@ -65,11 +74,21 @@ class ReviewServiceImpl(
         )
     }
 
-    override fun delete(id: Long) {
-        reviewRepository.deleteById(id)
+    override fun delete(id: Long, authentication: Authentication) {
+        val review = reviewRepository.findById(id)
+            .orElseThrow { CustomException(ErrorCode.REVIEW_NOT_FOUND) }
+
+        val currentEmail = authentication.name.lowercase()
+        val authorEmail = review.member.email.lowercase()
+        if (authorEmail != currentEmail) {
+            throw CustomException(ErrorCode.FORBIDDEN)
+        }
+
+        reviewRepository.delete(review)
     }
 
-    override fun getByPerfume(perfumeId: Long): List<ReviewDto.Response> {
+    @Transactional(readOnly = true)
+    override fun getReviewsByPerfumeId(perfumeId: Long): List<ReviewDto.Response> {
         val reviews = reviewRepository.findByPerfumeId(perfumeId)
         if (reviews.isEmpty()) {
             throw CustomException(ErrorCode.REVIEW_NOT_FOUND)
@@ -88,6 +107,7 @@ class ReviewServiceImpl(
         }
     }
 
+    @Transactional(readOnly = true)
     override fun getSummary(perfumeId: Long): ReviewDto.Summary {
         val reviews = reviewRepository.findByPerfumeId(perfumeId)
         if (reviews.isEmpty()) {
