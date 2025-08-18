@@ -10,7 +10,7 @@ interface ReviewService {
      *
      * @param request 리뷰 생성 요청 DTO
      */
-    fun create(request: ReviewDto.CreateRequest)
+    fun create(request: ReviewDto.CreateRequest, authentication: Authentication)
 
     /**
      * 특정 리뷰를 수정한다.

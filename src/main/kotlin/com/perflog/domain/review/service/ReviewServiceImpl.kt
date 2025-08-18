@@ -19,9 +19,9 @@ class ReviewServiceImpl(
     private val perfumeRepository: PerfumeRepository,
 ) : ReviewService {
 
-    override fun create(request: ReviewDto.CreateRequest) {
-        val member = memberRepository.findById(request.memberId)
-            .orElseThrow { CustomException(ErrorCode.MEMBER_NOT_FOUND) }
+    override fun create(request: ReviewDto.CreateRequest, authentication: Authentication) {
+        val member = memberRepository.findByEmail(authentication.name)
+            ?: throw CustomException(ErrorCode.MEMBER_NOT_FOUND)
 
         val perfume = perfumeRepository.findById(request.perfumeId)
             .orElseThrow { CustomException(ErrorCode.PERFUME_NOT_FOUND) }
@@ -65,7 +65,6 @@ class ReviewServiceImpl(
 
         return ReviewDto.Response(
             id = savedReview.id,
-            memberId = savedReview.member.id,
             perfumeId = savedReview.perfume.id,
             rating = savedReview.rating,
             content = savedReview.content,
@@ -97,7 +96,6 @@ class ReviewServiceImpl(
         return reviews.map { review ->
             ReviewDto.Response(
                 id = review.id,
-                memberId = review.member.id,
                 perfumeId = review.perfume.id,
                 rating = review.rating,
                 content = review.content,

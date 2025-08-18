@@ -14,8 +14,11 @@ class ReviewController(
 ) {
 
     @PostMapping
-    fun createReview(@RequestBody request: ReviewDto.CreateRequest): ResponseEntity<Void> {
-        reviewService.create(request)
+    fun createReview(
+        @RequestBody request: ReviewDto.CreateRequest,
+        authentication: Authentication
+    ): ResponseEntity<Void> {
+        reviewService.create(request, authentication)
         return ResponseEntity.status(HttpStatus.CREATED).build()
     }
 
