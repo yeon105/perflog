@@ -1,8 +1,11 @@
 package com.perflog.config.security.jwt
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.perflog.common.error.CustomException
+import com.perflog.common.error.ErrorCode
 import com.perflog.domain.member.dto.LoginRequest
 import com.perflog.domain.member.model.RefreshToken
+import com.perflog.domain.member.repository.MemberRepository
 import com.perflog.domain.member.repository.RefreshTokenRepository
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.Cookie
@@ -20,6 +23,7 @@ class LoginFilter(
     private val authenticationManager: AuthenticationManager,
     private val jwtUtil: JwtUtil,
     private val refreshTokenRepository: RefreshTokenRepository,
+    private val memberRepository: MemberRepository,
     private val objectMapper: ObjectMapper
 ) : UsernamePasswordAuthenticationFilter() {
 
@@ -51,8 +55,11 @@ class LoginFilter(
         val email = userDetails.username
         val role = userDetails.authorities.firstOrNull()?.authority ?: "ROLE_USER"
 
+        val member = memberRepository.findByEmail(email)
+            ?: throw CustomException(ErrorCode.MEMBER_NOT_FOUND)
+
         // 기존 Refresh Token 삭제
-        refreshTokenRepository.deleteByEmail(email)
+        refreshTokenRepository.deleteByMember(member)
 
         // 새로운 토큰들 생성
         val accessToken = jwtUtil.createAccessToken(email, role)
@@ -60,7 +67,7 @@ class LoginFilter(
 
         // Refresh Token DB에 저장
         val refreshTokenEntity = RefreshToken(
-            email = email,
+            member = member,
             token = refreshToken,
             expiresAt = LocalDateTime.now().plusDays(1)
         )

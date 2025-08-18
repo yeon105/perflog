@@ -6,10 +6,12 @@ import java.time.LocalDateTime
 @Entity
 @Table(name = "refresh_token")
 class RefreshToken(
-    @Column(name = "email", nullable = false, length = 100)
-    var email: String,
 
-    @Column(name = "token", nullable = false, length = 500)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "member_id", nullable = false)
+    var member: Member,
+
+    @Column(name = "token", nullable = false)
     var token: String,
 
     @Column(name = "expires_at", nullable = false)
@@ -18,7 +20,7 @@ class RefreshToken(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
-    var id: Long? = null
+    var id: Long = 0
 
     @Column(name = "created_at", nullable = false)
     var createdAt: LocalDateTime = LocalDateTime.now()

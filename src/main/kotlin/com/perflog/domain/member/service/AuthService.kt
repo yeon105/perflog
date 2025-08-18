@@ -32,7 +32,7 @@ class AuthService(
 
             // DB에서 Refresh Token 확인
             val storedToken = refreshTokenRepository.findByToken(refreshToken) ?: return null
-            if (storedToken.email != email || storedToken.expiresAt.isBefore(LocalDateTime.now())) {
+            if (storedToken.member.email != email || storedToken.expiresAt.isBefore(LocalDateTime.now())) {
                 refreshTokenRepository.delete(storedToken)
                 return null
             }
