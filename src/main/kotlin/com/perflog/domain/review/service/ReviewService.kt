@@ -1,101 +1,46 @@
 package com.perflog.domain.review.service
 
-import com.perflog.common.error.CustomException
-import com.perflog.common.error.ErrorCode
-import com.perflog.domain.member.repository.MemberRepository
 import com.perflog.domain.review.dto.ReviewDto
-import com.perflog.domain.review.model.Review
-import com.perflog.domain.review.repository.ReviewRepository
-import org.springframework.stereotype.Service
 
-@Service
-class ReviewService(
-    private val reviewRepository: ReviewRepository,
-    private val memberRepository: MemberRepository
-) {
+interface ReviewService {
 
-    fun createReview(request: ReviewDto.CreateRequest): Unit {
-        val member = memberRepository.findById(request.memberId)
-            .orElseThrow { CustomException(ErrorCode.MEMBER_NOT_FOUND) }
+    /**
+     * 새로운 리뷰를 등록한다.
+     *
+     * @param request 리뷰 생성 요청 DTO
+     */
+    fun create(request: ReviewDto.CreateRequest)
 
-        if (reviewRepository.existsByMemberAndPerfumeId(member, request.perfumeId)) {
-            throw CustomException(ErrorCode.REVIEW_ALREADY_EXISTS)
-        }
+    /**
+     * 특정 리뷰를 수정한다.
+     *
+     * @param id 리뷰 ID
+     * @param request 리뷰 수정 요청 DTO
+     * @return 수정된 리뷰 응답 DTO
+     */
+    fun update(id: Long, request: ReviewDto.UpdateRequest): ReviewDto.Response
 
-        if (request.rating !in 1..5) {
-            throw CustomException(ErrorCode.INVALID_RATING)
-        }
+    /**
+     * 특정 리뷰를 삭제한다.
+     *
+     * @param id 리뷰 ID
+     */
+    fun delete(id: Long)
 
-        val review = Review(
-            member = member,
-            perfumeId = request.perfumeId,
-            rating = request.rating,
-            content = request.content
-        )
+    /**
+     * 특정 향수에 작성된 리뷰 목록을 조회한다.
+     *
+     * @param perfumeId 향수 ID
+     * @return 리뷰 응답 DTO 목록
+     */
+    fun getByPerfume(perfumeId: Long): List<ReviewDto.Response>
 
-        reviewRepository.save(review)
-    }
-
-    fun updateReview(id: Long, request: ReviewDto.UpdateRequest): ReviewDto.Response {
-        if (!memberRepository.existsById(request.memberId)) {
-            throw CustomException(ErrorCode.MEMBER_NOT_FOUND)
-        }
-
-        val review = reviewRepository.findById(id)
-            .orElseThrow { CustomException(ErrorCode.REVIEW_NOT_FOUND) }
-
-        review.rating = request.rating
-        review.content = request.content
-
-        val savedReview = reviewRepository.save(review)
-
-        return ReviewDto.Response(
-            id = savedReview.id,
-            memberId = savedReview.member.id,
-            perfumeId = savedReview.perfumeId,
-            rating = savedReview.rating,
-            content = savedReview.content,
-            createdAt = savedReview.createdAt,
-            updatedAt = savedReview.updatedAt
-        )
-    }
-
-    fun deleteReview(id: Long) {
-        reviewRepository.deleteById(id)
-    }
-
-    fun getReviewsByPerfume(perfumeId: Long): List<ReviewDto.Response> {
-        val reviews = reviewRepository.findByPerfumeId(perfumeId)
-        if (reviews.isEmpty()) {
-            throw CustomException(ErrorCode.REVIEW_NOT_FOUND)
-        }
-
-        return reviews.map { review ->
-            ReviewDto.Response(
-                id = review.id,
-                memberId = review.member.id,
-                perfumeId = review.perfumeId,
-                rating = review.rating,
-                content = review.content,
-                createdAt = review.createdAt,
-                updatedAt = review.updatedAt
-            )
-        }
-    }
-
-    fun getReviewSummary(perfumeId: Long): ReviewDto.Summary {
-        val reviews = reviewRepository.findByPerfumeId(perfumeId)
-        if (reviews.isEmpty()) {
-            throw CustomException(ErrorCode.REVIEW_NOT_FOUND)
-        }
-
-        val avg = reviews.map { it.rating }.average()
-        val distribution = reviews.groupingBy { it.rating }.eachCount()
-
-        return ReviewDto.Summary(
-            perfumeId = perfumeId,
-            averageRating = avg,
-            ratingDistribution = distribution
-        )
-    }
+    /**
+     * 특정 향수에 대한 리뷰 요약 정보를 조회한다.
+     * (평균 평점, 평점 분포 등)
+     *
+     * @param perfumeId 향수 ID
+     * @return 리뷰 요약 응답 DTO
+     */
+    fun getSummary(perfumeId: Long): ReviewDto.Summary
 }
