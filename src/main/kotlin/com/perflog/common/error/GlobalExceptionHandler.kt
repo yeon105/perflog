@@ -1,7 +1,9 @@
 package com.perflog.common.error
 
+import com.fasterxml.jackson.databind.exc.InvalidFormatException
 import jakarta.persistence.EntityNotFoundException
 import org.springframework.http.ResponseEntity
+import org.springframework.http.converter.HttpMessageNotReadableException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 
@@ -31,6 +33,23 @@ class GlobalExceptionHandler {
 
     @ExceptionHandler(IllegalArgumentException::class)
     fun handleIllegalArgument(e: IllegalArgumentException): ResponseEntity<ErrorResponse> {
+        val code = ErrorCode.INVALID_ARGUMENT
+        return ResponseEntity
+            .status(code.status)
+            .body(ErrorResponse(code.status, e.message ?: code.message))
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException::class)
+    fun handleInvalidEnumInBody(e: HttpMessageNotReadableException): ResponseEntity<ErrorResponse> {
+        val cause = e.cause
+        if (cause is InvalidFormatException && cause.targetType.isEnum) {
+            val code = ErrorCode.INVALID_ENUM
+            val allowed = cause.targetType.enumConstants?.joinToString(", ") { it.toString() } ?: ""
+            val message = "유효하지 않은 enum 값입니다. 허용값: [$allowed]"
+            return ResponseEntity
+                .status(code.status)
+                .body(ErrorResponse(code.status, message))
+        }
         val code = ErrorCode.INVALID_ARGUMENT
         return ResponseEntity
             .status(code.status)
