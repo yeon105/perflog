@@ -10,10 +10,6 @@ import java.time.LocalDateTime
 @Table(name = "perfumes")
 class Perfume(
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long = 0,
-
     @Column(nullable = false)
     var name: String,
 
@@ -35,6 +31,19 @@ class Perfume(
     @Enumerated(EnumType.STRING)
     var gender: Gender,
 
+    @Column(name = "top_notes", columnDefinition = "TEXT")
+    var topNotes: String? = null,
+
+    @Column(name = "middle_notes", columnDefinition = "TEXT")
+    var middleNotes: String? = null,
+
+    @Column(name = "base_notes", columnDefinition = "TEXT")
+    var baseNotes: String? = null
+) {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    val id: Long = 0
+
     @Column(name = "created_at")
     var createdAt: LocalDateTime = LocalDateTime.now()
-)
+}

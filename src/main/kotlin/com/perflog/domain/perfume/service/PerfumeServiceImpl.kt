@@ -4,9 +4,10 @@ import com.perflog.common.error.CustomException
 import com.perflog.common.error.ErrorCode
 import com.perflog.domain.perfume.dto.PerfumeDto
 import com.perflog.domain.perfume.model.entity.Perfume
-import com.perflog.domain.perfume.model.entity.PerfumeNote
 import com.perflog.domain.perfume.model.entity.PerfumeTag
-import com.perflog.domain.perfume.repository.*
+import com.perflog.domain.perfume.repository.PerfumeRepository
+import com.perflog.domain.perfume.repository.PerfumeTagRepository
+import com.perflog.domain.perfume.repository.TagRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -14,28 +15,24 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class PerfumeServiceImpl(
     private val perfumeRepository: PerfumeRepository,
-    private val noteRepository: NoteRepository,
-    private val perfumeNoteRepository: PerfumeNoteRepository,
     private val tagRepository: TagRepository,
     private val perfumeTagRepository: PerfumeTagRepository
-) {
+) : PerfumeService {
 
     @Transactional
-    fun create(request: PerfumeDto.CreateRequest) {
+    override fun create(request: PerfumeDto.CreateRequest) {
         if (perfumeRepository.existsByNameAndBrand(request.name, request.brand)) {
             throw CustomException(ErrorCode.DUPLICATE_PERFUME)
         }
 
-        val noteIds = request.notes.map { it.noteId }.toSet()
-        if (noteIds.isNotEmpty()) {
-            val existing = noteRepository.findAllById(noteIds).map { it.id }.toSet()
-            if ((noteIds - existing).isNotEmpty()) throw CustomException(ErrorCode.NOTE_NOT_FOUND)
-        }
-
         val tagIds = request.tagIds.toSet()
-        if (tagIds.isNotEmpty()) {
-            val existing = tagRepository.findAllById(tagIds).map { it.id }.toSet()
-            if ((tagIds - existing).isNotEmpty()) throw CustomException(ErrorCode.TAG_NOT_FOUND)
+        val tagsById = tagRepository.findAllById(tagIds).associateBy { it.id }
+
+        if (tagsById.size != tagIds.size) {
+            val missing = tagIds - tagsById.keys
+            if (missing.isNotEmpty()) {
+                throw CustomException(ErrorCode.TAG_NOT_FOUND)
+            }
         }
 
         val perfume = perfumeRepository.save(
@@ -46,35 +43,30 @@ class PerfumeServiceImpl(
                 imageUrl = request.imageUrl,
                 longevity = request.longevity,
                 season = request.season,
-                gender = request.gender
+                gender = request.gender,
+                topNotes = request.topNotes.joinToString(",").ifBlank { null },
+                middleNotes = request.middleNotes.joinToString(",").ifBlank { null },
+                baseNotes = request.baseNotes.joinToString(",").ifBlank { null }
             )
         )
-
-        val noteLinks = request.notes.map { n ->
-            PerfumeNote(
-                perfume = perfume,
-                note = noteRepository.getReferenceById(n.noteId),
-                type = n.type
-            )
-        }
-        perfumeNoteRepository.saveAll(noteLinks)
 
         val tagLinks = tagIds.map { tagId ->
             PerfumeTag(
                 perfume = perfume,
-                tag = tagRepository.getReferenceById(tagId)
+                tag = tagsById.getValue(tagId)
             )
         }
+
         perfumeTagRepository.saveAll(tagLinks)
     }
 
-    @Transactional(readOnly = true)
-    fun get(id: Long): PerfumeDto.Response {
+    override fun get(id: Long): PerfumeDto.Response {
         val perfume = perfumeRepository.findById(id)
             .orElseThrow { CustomException(ErrorCode.PERFUME_NOT_FOUND) }
 
-        val noteLinks = perfumeNoteRepository.findByPerfume(perfume)
-        val tagLinks = perfumeTagRepository.findByPerfume(perfume)
+        val tags = perfumeTagRepository.findByPerfume(perfume).map { it.tag.name }
+
+        fun splitNotes(s: String?): List<String> = s?.split(",") ?: emptyList()
 
         return PerfumeDto.Response(
             id = perfume.id,
@@ -85,17 +77,14 @@ class PerfumeServiceImpl(
             longevity = perfume.longevity.description,
             season = perfume.season.description,
             gender = perfume.gender.description,
-            notes = noteLinks.map { link ->
-                PerfumeDto.Response.NoteView(
-                    name = link.note.name,
-                    type = link.type
-                )
-            },
-            tags = tagLinks.map { it.tag.name }
+            topNotes = splitNotes(perfume.topNotes),
+            middleNotes = splitNotes(perfume.middleNotes),
+            baseNotes = splitNotes(perfume.baseNotes),
+            tags = tags
         )
     }
 
-    fun list(): PerfumeDto.ListResponse {
+    override fun list(): PerfumeDto.ListResponse {
         val perfumes = perfumeRepository.findAll()
 
         val items = perfumes.map {

@@ -2,7 +2,6 @@ package com.perflog.domain.perfume.dto
 
 import com.perflog.domain.perfume.model.enum.Gender
 import com.perflog.domain.perfume.model.enum.Longevity
-import com.perflog.domain.perfume.model.enum.NoteLayer
 import com.perflog.domain.perfume.model.enum.Season
 
 class PerfumeDto {
@@ -16,14 +15,11 @@ class PerfumeDto {
         val longevity: Longevity,
         val season: Season,
         val gender: Gender,
-        val notes: List<NoteItem> = emptyList(),
+        val topNotes: List<String> = emptyList(),
+        val middleNotes: List<String> = emptyList(),
+        val baseNotes: List<String> = emptyList(),
         val tagIds: List<Long> = emptyList()
-    ) {
-        data class NoteItem(
-            val noteId: Long,
-            val type: NoteLayer
-        )
-    }
+    )
 
     // 단일 향수 응답
     data class Response(
@@ -35,11 +31,11 @@ class PerfumeDto {
         val longevity: String,
         val season: String,
         val gender: String,
-        val notes: List<NoteView>,
+        val topNotes: List<String>,
+        val middleNotes: List<String>,
+        val baseNotes: List<String>,
         val tags: List<String>
-    ) {
-        data class NoteView(val name: String, val type: NoteLayer)
-    }
+    )
 
     // 목록 응답
     data class ListResponse(
