@@ -79,7 +79,9 @@ class ReviewServiceImpl(
 
         val currentEmail = authentication.name.lowercase()
         val authorEmail = review.member.email.lowercase()
-        if (authorEmail != currentEmail) {
+        val authorities = authentication.authorities.map { it.authority }
+        
+        if (authorEmail != currentEmail && "ROLE_ADMIN" !in authorities) {
             throw CustomException(ErrorCode.FORBIDDEN)
         }
 
