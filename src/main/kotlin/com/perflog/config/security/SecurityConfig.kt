@@ -59,7 +59,8 @@ class SecurityConfig(
                     .hasAnyRole("USER", "ADMIN")
                     .requestMatchers("/api/member/logout").hasAnyRole("USER", "ADMIN")
 
-                    .requestMatchers(HttpMethod.POST, "/api/perfumes").hasRole("ADMIN")
+                    .requestMatchers(HttpMethod.POST, "/api/perfumes", "/api/perfumes/excel/upload")
+                    .hasRole("ADMIN")
                     .requestMatchers(HttpMethod.GET, "/api/perfumes/*").hasRole("ADMIN")
                     .anyRequest().authenticated()
             }
