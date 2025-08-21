@@ -53,7 +53,6 @@ class LoginFilter(
     ) {
         val userDetails = authResult.principal as UserDetails
         val email = userDetails.username
-        val role = userDetails.authorities.firstOrNull()?.authority ?: "ROLE_USER"
 
         val member = memberRepository.findByEmail(email)
             ?: throw CustomException(ErrorCode.MEMBER_NOT_FOUND)
@@ -62,14 +61,12 @@ class LoginFilter(
         refreshTokenRepository.deleteByMember(member)
 
         // 새로운 토큰들 생성
-        val accessToken = jwtUtil.createAccessToken(email, role)
-        val refreshToken = jwtUtil.createRefreshToken(email)
+        val accessToken = jwtUtil.createAccessToken(member.id, member.role.toString())
+        val refreshToken = jwtUtil.createRefreshToken(member.id)
 
         // Refresh Token DB에 저장
         val refreshTokenEntity = RefreshToken(
-            member = member,
-            token = refreshToken,
-            expiresAt = LocalDateTime.now().plusDays(1)
+            member, refreshToken, LocalDateTime.now().plusDays(1)
         )
         refreshTokenRepository.save(refreshTokenEntity)
 

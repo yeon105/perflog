@@ -88,7 +88,7 @@ class SecurityConfig(
                 UsernamePasswordAuthenticationFilter::class.java
             )
             .addFilterBefore(
-                JwtAuthFilter(jwtUtil),
+                JwtAuthFilter(jwtUtil, memberRepository),
                 UsernamePasswordAuthenticationFilter::class.java
             )
 

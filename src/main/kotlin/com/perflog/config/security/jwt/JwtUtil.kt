@@ -14,14 +14,13 @@ class JwtUtil(
     private val secretKey: SecretKey =
         SecretKeySpec(secretKey.toByteArray(), "HmacSHA256")
 
-    fun getEmail(token: String): String? {
-        val claims = Jwts.parserBuilder()
+    fun getMemberId(token: String): Long? {
+        return Jwts.parserBuilder()
             .setSigningKey(secretKey)
             .build()
             .parseClaimsJws(token)
             .body
-
-        return claims["email"] as? String
+            .subject?.toLongOrNull()
     }
 
     fun getRole(token: String): String? {
@@ -55,9 +54,9 @@ class JwtUtil(
     }
 
     // Access Token 생성 (짧은 만료시간)
-    fun createAccessToken(email: String, role: String): String {
+    fun createAccessToken(memberId: Long, role: String): String {
         return Jwts.builder()
-            .claim("email", email)
+            .setSubject(memberId.toString())
             .claim("role", role)
             .claim("type", "access")
             .setIssuedAt(Date(System.currentTimeMillis()))
@@ -67,9 +66,9 @@ class JwtUtil(
     }
 
     // Refresh Token 생성 (긴 만료시간)
-    fun createRefreshToken(email: String): String {
+    fun createRefreshToken(memberId: Long): String {
         return Jwts.builder()
-            .claim("email", email)
+            .setSubject(memberId.toString())
             .claim("type", "refresh")
             .setIssuedAt(Date(System.currentTimeMillis()))
             .setExpiration(Date(System.currentTimeMillis() + 24 * 60 * 60 * 1000L)) // 1일

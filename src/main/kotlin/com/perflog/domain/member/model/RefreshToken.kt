@@ -7,7 +7,7 @@ import java.time.LocalDateTime
 @Table(name = "refresh_token")
 class RefreshToken(
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id", nullable = false)
     var member: Member,
 
