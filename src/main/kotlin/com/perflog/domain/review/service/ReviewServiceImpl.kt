@@ -19,7 +19,7 @@ class ReviewServiceImpl(
     private val perfumeRepository: PerfumeRepository,
 ) : ReviewService {
 
-    override fun create(request: ReviewDto.CreateRequest, authentication: Authentication) {
+    override fun createReview(request: ReviewDto.ReviewRequest, authentication: Authentication) {
         val member = memberRepository.findByEmail(authentication.name)
             ?: throw CustomException(ErrorCode.MEMBER_NOT_FOUND)
 
@@ -44,11 +44,11 @@ class ReviewServiceImpl(
         reviewRepository.save(review)
     }
 
-    override fun update(
+    override fun updateReview(
         id: Long,
-        request: ReviewDto.UpdateRequest,
+        request: ReviewDto.ReviewRequest,
         authentication: Authentication
-    ): ReviewDto.Response {
+    ): ReviewDto.ReviewResponse {
         val review = reviewRepository.findById(id)
             .orElseThrow { CustomException(ErrorCode.REVIEW_NOT_FOUND) }
 
@@ -63,7 +63,7 @@ class ReviewServiceImpl(
 
         val savedReview = reviewRepository.save(review)
 
-        return ReviewDto.Response(
+        return ReviewDto.ReviewResponse(
             id = savedReview.id,
             perfumeId = savedReview.perfume.id,
             rating = savedReview.rating,
@@ -73,7 +73,7 @@ class ReviewServiceImpl(
         )
     }
 
-    override fun delete(id: Long, authentication: Authentication) {
+    override fun deleteReview(id: Long, authentication: Authentication) {
         val review = reviewRepository.findById(id)
             .orElseThrow { CustomException(ErrorCode.REVIEW_NOT_FOUND) }
 
@@ -87,14 +87,14 @@ class ReviewServiceImpl(
     }
 
     @Transactional(readOnly = true)
-    override fun getReviewsByPerfumeId(perfumeId: Long): List<ReviewDto.Response> {
+    override fun getReviewsByPerfumeId(perfumeId: Long): List<ReviewDto.ReviewResponse> {
         val reviews = reviewRepository.findByPerfumeId(perfumeId)
         if (reviews.isEmpty()) {
             throw CustomException(ErrorCode.REVIEW_NOT_FOUND)
         }
 
         return reviews.map { review ->
-            ReviewDto.Response(
+            ReviewDto.ReviewResponse(
                 id = review.id,
                 perfumeId = review.perfume.id,
                 rating = review.rating,

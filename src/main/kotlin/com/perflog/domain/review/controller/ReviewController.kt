@@ -15,19 +15,19 @@ class ReviewController(
 
     @PostMapping
     fun createReview(
-        @RequestBody request: ReviewDto.CreateRequest,
+        @RequestBody request: ReviewDto.ReviewRequest,
         authentication: Authentication
     ): ResponseEntity<Void> {
-        reviewService.create(request, authentication)
+        reviewService.createReview(request, authentication)
         return ResponseEntity.status(HttpStatus.CREATED).build()
     }
 
     @PutMapping("/{reviewId}")
     fun updateReview(
         @PathVariable reviewId: Long,
-        @RequestBody request: ReviewDto.UpdateRequest, authentication: Authentication
-    ): ResponseEntity<ReviewDto.Response> {
-        val response = reviewService.update(reviewId, request, authentication)
+        @RequestBody request: ReviewDto.ReviewRequest, authentication: Authentication
+    ): ResponseEntity<ReviewDto.ReviewResponse> {
+        val response = reviewService.updateReview(reviewId, request, authentication)
         return ResponseEntity.ok(response)
     }
 
@@ -36,12 +36,12 @@ class ReviewController(
         @PathVariable reviewId: Long,
         authentication: Authentication
     ): ResponseEntity<Void> {
-        reviewService.delete(reviewId, authentication)
+        reviewService.deleteReview(reviewId, authentication)
         return ResponseEntity.noContent().build()
     }
 
     @GetMapping("/perfume/{perfumeId}")
-    fun getReviewsByPerfume(@PathVariable perfumeId: Long): ResponseEntity<List<ReviewDto.Response>> {
+    fun getReviewsByPerfume(@PathVariable perfumeId: Long): ResponseEntity<List<ReviewDto.ReviewResponse>> {
         val reviews = reviewService.getReviewsByPerfumeId(perfumeId)
         return ResponseEntity.ok(reviews)
     }

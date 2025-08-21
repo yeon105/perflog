@@ -3,22 +3,15 @@ package com.perflog.domain.review.dto
 import java.time.LocalDateTime
 
 class ReviewDto {
-    // 리뷰 생성
-    data class CreateRequest(
+    // 리뷰 생성/수정 요청 DTO
+    data class ReviewRequest(
         val perfumeId: Long,
         val rating: Int,
         val content: String
     )
 
-    // 리뷰 수정
-    data class UpdateRequest(
-        val perfumeId: Long,
-        val rating: Int,
-        val content: String
-    )
-
-    // 응답 공통 DTO
-    data class Response(
+    // 리뷰 응답 DTO
+    data class ReviewResponse(
         val id: Long,
         val perfumeId: Long,
         val rating: Int,
