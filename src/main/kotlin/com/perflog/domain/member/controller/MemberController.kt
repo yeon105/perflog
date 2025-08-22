@@ -1,8 +1,8 @@
 package com.perflog.domain.member.controller
 
 import com.perflog.domain.member.dto.MemberDto
-import com.perflog.domain.member.service.AuthService
 import com.perflog.domain.member.service.MemberService
+import com.perflog.domain.member.service.TokenService
 import jakarta.servlet.http.Cookie
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/api/member")
 class MemberController(
     private val memberService: MemberService,
-    private val authService: AuthService
+    private val tokenService: TokenService
 ) {
 
     @PostMapping("/join")
@@ -31,7 +31,7 @@ class MemberController(
         val refreshToken = request.cookies?.find { it.name == "refreshToken" }?.value
 
         if (refreshToken != null) {
-            authService.revokeRefreshToken(refreshToken)
+            tokenService.revokeRefreshToken(refreshToken)
         }
 
         val accessTokenCookie = Cookie("accessToken", "").apply {
@@ -52,11 +52,14 @@ class MemberController(
     }
 
     @PostMapping("/refresh")
-    fun refreshToken(request: HttpServletRequest, response: HttpServletResponse): ResponseEntity<Void> {
+    fun refreshToken(
+        request: HttpServletRequest,
+        response: HttpServletResponse
+    ): ResponseEntity<Void> {
         val refreshToken = request.cookies?.find { it.name == "refreshToken" }?.value
             ?: return ResponseEntity.badRequest().build()
 
-        val tokenResponse = authService.refreshAccessToken(refreshToken)
+        val tokenResponse = tokenService.refreshAccessToken(refreshToken)
             ?: return ResponseEntity.unprocessableEntity().build()
 
         // 새로운 Access Token을 쿠키에 설정

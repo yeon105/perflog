@@ -1,5 +1,8 @@
 package com.perflog.config.security.jwt
 
+import com.perflog.common.error.CustomException
+import com.perflog.common.error.ErrorCode
+import com.perflog.domain.member.repository.MemberRepository
 import jakarta.servlet.FilterChain
 import jakarta.servlet.ServletException
 import jakarta.servlet.http.HttpServletRequest
@@ -11,7 +14,8 @@ import org.springframework.web.filter.OncePerRequestFilter
 import java.io.IOException
 
 class JwtAuthFilter(
-    private val jwtUtil: JwtUtil
+    private val jwtUtil: JwtUtil,
+    private val memberRepository: MemberRepository
 ) : OncePerRequestFilter() { // 서블릿 필터
 
     @Throws(ServletException::class, IOException::class)
@@ -30,15 +34,21 @@ class JwtAuthFilter(
 
                     // Access Token만 인증에 사용
                     if (tokenType == "access") {
-                        val email = jwtUtil.getEmail(accessToken)
+                        val memberId = jwtUtil.getMemberId(accessToken)
                         val role = jwtUtil.getRole(accessToken)
 
-                        if (email != null && role != null) {
+                        if (memberId != null && role != null) {
                             val authorities = listOf(SimpleGrantedAuthority(role))
+                            val member = memberRepository.findById(memberId)
+                                .orElseThrow { throw CustomException(ErrorCode.MEMBER_NOT_FOUND) }
+
+
                             val authentication = UsernamePasswordAuthenticationToken(
-                                email, null, authorities
+                                member.email, null, authorities
                             )
-                            SecurityContextHolder.getContext().authentication = authentication // 인증 등록
+
+                            // 인증 등록
+                            SecurityContextHolder.getContext().authentication = authentication
                         }
                     }
                 }

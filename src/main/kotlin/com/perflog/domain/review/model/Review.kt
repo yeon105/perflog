@@ -1,5 +1,6 @@
 package com.perflog.domain.review.model
 
+import com.fasterxml.jackson.annotation.JsonBackReference
 import com.perflog.common.model.BaseTimeEntity
 import com.perflog.domain.member.model.Member
 import com.perflog.domain.perfume.model.entity.Perfume
@@ -9,6 +10,7 @@ import jakarta.persistence.*
 @Table(name = "reviews")
 class Review(
 
+    @JsonBackReference("member-reviews")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id", nullable = false)
     var member: Member,

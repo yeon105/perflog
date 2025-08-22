@@ -4,9 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.perflog.config.security.jwt.JwtAuthFilter
 import com.perflog.config.security.jwt.JwtUtil
 import com.perflog.config.security.jwt.LoginFilter
+import com.perflog.domain.member.repository.MemberRepository
 import com.perflog.domain.member.repository.RefreshTokenRepository
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.http.HttpMethod
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
@@ -26,6 +28,7 @@ class SecurityConfig(
     private val authenticationConfiguration: AuthenticationConfiguration,
     private val jwtUtil: JwtUtil,
     private val refreshTokenRepository: RefreshTokenRepository,
+    private val memberRepository: MemberRepository,
     private val objectMapper: ObjectMapper
 ) {
 
@@ -44,11 +47,20 @@ class SecurityConfig(
             .httpBasic { httpBasic -> httpBasic.disable() }
             .authorizeHttpRequests { auth ->
                 auth.requestMatchers(
-                    "/", "/api/member/login", "/api/member/join", "/api/member/refresh",
-                    "/api/reviews/perfume/{perfumeId}", "/api/reviews/perfume/{perfumeId}/summary"
+                    "/", "/api/member/login", "/api/member/join", "/api/member/refresh"
                 ).permitAll()
-                    .requestMatchers("/api/member/logout", "/api/reviews", "/api/reviews/{reviewId}")
+                    .requestMatchers(HttpMethod.GET, "/api/perfumes").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/reviews/perfume/**").permitAll()
+
+                    .requestMatchers(HttpMethod.POST, "/api/reviews").hasRole("USER")
+                    .requestMatchers(HttpMethod.POST, "/api/reviews/*").hasRole("USER")
+                    .requestMatchers(HttpMethod.PUT, "/api/reviews/*").hasRole("USER")
+                    .requestMatchers(HttpMethod.DELETE, "/api/reviews/*")
                     .hasAnyRole("USER", "ADMIN")
+                    .requestMatchers("/api/member/logout").hasAnyRole("USER", "ADMIN")
+
+                    .requestMatchers(HttpMethod.POST, "/api/perfumes").hasRole("ADMIN")
+                    .requestMatchers(HttpMethod.GET, "/api/perfumes/*").hasRole("ADMIN")
                     .anyRequest().authenticated()
             }
             .cors { cors ->
@@ -66,11 +78,17 @@ class SecurityConfig(
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             }
             .addFilterAt(
-                LoginFilter(authenticationManager(), jwtUtil, refreshTokenRepository, objectMapper),
+                LoginFilter(
+                    authenticationManager(),
+                    jwtUtil,
+                    refreshTokenRepository,
+                    memberRepository,
+                    objectMapper
+                ),
                 UsernamePasswordAuthenticationFilter::class.java
             )
             .addFilterBefore(
-                JwtAuthFilter(jwtUtil),
+                JwtAuthFilter(jwtUtil, memberRepository),
                 UsernamePasswordAuthenticationFilter::class.java
             )
 
