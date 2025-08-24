@@ -18,7 +18,7 @@ class MemberServiceImpl(
     private val passwordEncoder: PasswordEncoder
 ) : MemberService {
 
-    override fun createMember(request: MemberDto.CreateRequest) {
+    override fun createMember(request: MemberDto.MemberRequest) {
         if (memberRepository.existsByEmail(request.email)) {
             throw CustomException(ErrorCode.DUPLICATE_EMAIL)
         }
@@ -31,12 +31,33 @@ class MemberServiceImpl(
         val email = authentication.name
         val member = memberRepository.findByEmail(email)
             ?: throw CustomException(ErrorCode.MEMBER_NOT_FOUND)
-        
+
         return MemberDto.MemberResponse(
             member.email,
             member.name,
             member.createdAt,
             member.updatedAt
+        )
+    }
+
+    override fun updateMember(
+        request: MemberDto.MemberRequest,
+        authentication: Authentication
+    ): MemberDto.MemberResponse {
+        val email = authentication.name
+        val member = memberRepository.findByEmail(email)
+            ?: throw CustomException(ErrorCode.MEMBER_NOT_FOUND)
+
+        member.email = request.email
+        member.password = passwordEncoder.encode(request.password)
+        member.name = request.name
+        
+        val updatedMember = memberRepository.save(member)
+        return MemberDto.MemberResponse(
+            updatedMember.email,
+            updatedMember.name,
+            updatedMember.createdAt,
+            updatedMember.updatedAt
         )
     }
 }

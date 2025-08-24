@@ -19,7 +19,7 @@ class MemberController(
 ) {
 
     @PostMapping
-    fun createMember(@Valid @RequestBody request: MemberDto.CreateRequest): ResponseEntity<Void> {
+    fun createMember(@Valid @RequestBody request: MemberDto.MemberRequest): ResponseEntity<Void> {
         memberService.createMember(request)
         return ResponseEntity.ok().build()
     }
@@ -27,6 +27,15 @@ class MemberController(
     @GetMapping
     fun getMember(authentication: Authentication): ResponseEntity<MemberDto.MemberResponse> {
         val member = memberService.getMember(authentication)
+        return ResponseEntity.ok().body(member)
+    }
+
+    @PutMapping
+    fun updateMember(
+        @Valid @RequestBody request: MemberDto.MemberRequest,
+        authentication: Authentication
+    ): ResponseEntity<MemberDto.MemberResponse> {
+        val member = memberService.updateMember(request, authentication)
         return ResponseEntity.ok().body(member)
     }
 
