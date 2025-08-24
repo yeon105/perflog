@@ -7,5 +7,6 @@ interface MemberService {
     /**
      * 새로운 회원을 등록한다.
      */
-    fun createMember(memberDTO: MemberDto)
+    fun createMember(request: MemberDto.CreateRequest)
+    
 }

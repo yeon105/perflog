@@ -20,9 +20,9 @@ class MemberController(
     private val tokenService: TokenService
 ) {
 
-    @PostMapping("/join")
-    fun createMember(@Valid @RequestBody memberDTO: MemberDto): ResponseEntity<Void> {
-        memberService.createMember(memberDTO)
+    @PostMapping
+    fun createMember(@Valid @RequestBody request: MemberDto.CreateRequest): ResponseEntity<Void> {
+        memberService.createMember(request)
         return ResponseEntity.ok().build()
     }
 

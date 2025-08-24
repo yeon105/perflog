@@ -16,13 +16,14 @@ class MemberServiceImpl(
     private val memberRepository: MemberRepository,
     private val passwordEncoder: PasswordEncoder
 ) : MemberService {
-    
-    override fun createMember(memberDTO: MemberDto) {
-        if (memberRepository.existsByEmail(memberDTO.email)) {
+
+    override fun createMember(request: MemberDto.CreateRequest) {
+        if (memberRepository.existsByEmail(request.email)) {
             throw CustomException(ErrorCode.DUPLICATE_EMAIL)
         }
-        val encodedPassword = passwordEncoder.encode(memberDTO.password)
-        val member = Member(memberDTO.email, encodedPassword, memberDTO.name, MemberRole.ROLE_USER)
+        val encodedPassword = passwordEncoder.encode(request.password)
+        val member = Member(request.email, encodedPassword, request.name, MemberRole.ROLE_USER)
         memberRepository.save(member)
     }
+
 }
