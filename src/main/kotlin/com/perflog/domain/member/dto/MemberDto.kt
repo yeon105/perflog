@@ -15,8 +15,8 @@ class MemberDto {
         val password: String
     )
 
-    // 회원가입 DTO
-    data class CreateRequest(
+    // 회원 요청 DTO
+    data class MemberRequest(
         @field:NotBlank(message = "이메일은 필수 입력 값입니다.")
         @field:Email(message = "이메일 형식이 올바르지 않습니다.")
         var email: String,
