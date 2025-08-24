@@ -7,6 +7,7 @@ import com.perflog.domain.member.model.Member
 import com.perflog.domain.member.model.MemberRole
 import com.perflog.domain.member.repository.MemberRepository
 import jakarta.transaction.Transactional
+import org.springframework.security.core.Authentication
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 
@@ -26,4 +27,16 @@ class MemberServiceImpl(
         memberRepository.save(member)
     }
 
+    override fun getMember(authentication: Authentication): MemberDto.MemberResponse {
+        val email = authentication.name
+        val member = memberRepository.findByEmail(email)
+            ?: throw CustomException(ErrorCode.MEMBER_NOT_FOUND)
+        
+        return MemberDto.MemberResponse(
+            member.email,
+            member.name,
+            member.createdAt,
+            member.updatedAt
+        )
+    }
 }
