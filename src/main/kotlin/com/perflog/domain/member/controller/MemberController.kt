@@ -21,8 +21,8 @@ class MemberController(
 ) {
 
     @PostMapping("/join")
-    fun join(@Valid @RequestBody memberDTO: MemberDto): ResponseEntity<Void> {
-        memberService.join(memberDTO)
+    fun createMember(@Valid @RequestBody memberDTO: MemberDto): ResponseEntity<Void> {
+        memberService.createMember(memberDTO)
         return ResponseEntity.ok().build()
     }
 
