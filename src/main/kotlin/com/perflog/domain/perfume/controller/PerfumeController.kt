@@ -18,6 +18,15 @@ class PerfumeController(
         return ResponseEntity.status(HttpStatus.CREATED).build()
     }
 
+    @PutMapping("/{perfumeId}")
+    fun updatePerfume(
+        @PathVariable perfumeId: Long,
+        @RequestBody request: PerfumeDto.PerfumeRequest, authentication: Authentication
+    ): ResponseEntity<PerfumeDto.PerfumeResponse> {
+        val response = perfumeService.updatePerfume(perfumeId, request, authentication)
+        return ResponseEntity.ok(response)
+    }
+
     @DeleteMapping("/{id}")
     fun deletePerfume(
         @PathVariable id: Long,

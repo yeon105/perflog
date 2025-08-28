@@ -65,17 +65,70 @@ class PerfumeServiceImpl(
     }
 
     @Transactional
+    override fun updatePerfume(
+        id: Long,
+        request: PerfumeDto.PerfumeRequest,
+        authentication: Authentication
+    ): PerfumeDto.PerfumeResponse {
+        requireAdmin(authentication)
+
+        val perfume = perfumeRepository.findById(id)
+            .orElseThrow { CustomException(ErrorCode.PERFUME_NOT_FOUND) }
+
+        val tagIds = request.tagIds.toSet()
+        val tagsById = tagRepository.findAllById(tagIds).associateBy { it.id }
+        if (tagsById.size != tagIds.size) {
+            val missing = tagIds - tagsById.keys
+            if (missing.isNotEmpty()) {
+                throw CustomException(ErrorCode.TAG_NOT_FOUND)
+            }
+        }
+
+        perfume.apply {
+            name = request.name
+            brand = request.brand
+            launchYear = request.launchYear
+            imageUrl = request.imageUrl
+            longevity = request.longevity
+            season = request.season
+            gender = request.gender
+            topNotes = request.topNotes.joinToString(",").ifBlank { null }
+            middleNotes = request.middleNotes.joinToString(",").ifBlank { null }
+            baseNotes = request.baseNotes.joinToString(",").ifBlank { null }
+        }
+
+        perfumeTagRepository.deleteByPerfumeId(id)
+        if (tagIds.isNotEmpty()) {
+            val newLinks = tagIds.map { tagId ->
+                PerfumeTag(perfume = perfume, tag = tagsById.getValue(tagId))
+            }
+            perfumeTagRepository.saveAll(newLinks)
+        }
+
+        val tags = perfumeTagRepository.findByPerfume(perfume).map { it.tag.name }
+
+        return PerfumeDto.PerfumeResponse(
+            id = perfume.id,
+            name = perfume.name,
+            brand = perfume.brand,
+            launchYear = perfume.launchYear,
+            imageUrl = perfume.imageUrl,
+            longevity = perfume.longevity.description,
+            season = perfume.season.description,
+            gender = perfume.gender.description,
+            topNotes = splitNotes(perfume.topNotes),
+            middleNotes = splitNotes(perfume.middleNotes),
+            baseNotes = splitNotes(perfume.baseNotes),
+            tags = tags
+        )
+    }
+
+    @Transactional
     override fun deletePerfume(
         id: Long,
         authentication: Authentication
     ) {
-        val email = authentication.name
-        val member = (memberRepository.findByEmail(email)
-            ?: throw CustomException(ErrorCode.MEMBER_NOT_FOUND))
-
-        if (member.role != MemberRole.ROLE_ADMIN) {
-            throw CustomException(ErrorCode.FORBIDDEN)
-        }
+        requireAdmin(authentication)
 
         val perfume = perfumeRepository.findById(id)
             .orElseThrow { CustomException(ErrorCode.PERFUME_NOT_FOUND) }
@@ -89,8 +142,6 @@ class PerfumeServiceImpl(
             .orElseThrow { CustomException(ErrorCode.PERFUME_NOT_FOUND) }
 
         val tags = perfumeTagRepository.findByPerfume(perfume).map { it.tag.name }
-
-        fun splitNotes(s: String?): List<String> = s?.split(",") ?: emptyList()
 
         return PerfumeDto.PerfumeResponse(
             id = perfume.id,
@@ -124,4 +175,15 @@ class PerfumeServiceImpl(
         return PerfumeDto.PerfumeListResponse(items = items)
     }
 
+    private fun requireAdmin(authentication: Authentication) {
+        val email = authentication.name
+        val member = (memberRepository.findByEmail(email)
+            ?: throw CustomException(ErrorCode.MEMBER_NOT_FOUND))
+
+        if (member.role != MemberRole.ROLE_ADMIN) {
+            throw CustomException(ErrorCode.FORBIDDEN)
+        }
+    }
+
+    private fun splitNotes(s: String?): List<String> = s?.split(",") ?: emptyList()
 }

@@ -11,6 +11,20 @@ interface PerfumeService {
     fun createPerfume(request: PerfumeDto.PerfumeRequest)
 
     /**
+     * 특정 향수를 수정한다.
+     *
+     * @param id 향수 ID
+     * @param request 향수 수정 요청 DTO
+     * @param authentication 현재 로그인한 사용자 정보 (작성자 검증용)
+     * @return 수정된 향수 응답 DTO
+     */
+    fun updatePerfume(
+        id: Long,
+        request: PerfumeDto.PerfumeRequest,
+        authentication: Authentication
+    ): PerfumeDto.PerfumeResponse
+
+    /**
      * 특정 향수를 삭제한다.
      *
      * @param id 향수 ID
