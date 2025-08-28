@@ -2,12 +2,15 @@ package com.perflog.domain.perfume.service
 
 import com.perflog.common.error.CustomException
 import com.perflog.common.error.ErrorCode
+import com.perflog.domain.member.model.MemberRole
+import com.perflog.domain.member.repository.MemberRepository
 import com.perflog.domain.perfume.dto.PerfumeDto
 import com.perflog.domain.perfume.model.entity.Perfume
 import com.perflog.domain.perfume.model.entity.PerfumeTag
 import com.perflog.domain.perfume.repository.PerfumeRepository
 import com.perflog.domain.perfume.repository.PerfumeTagRepository
 import com.perflog.domain.perfume.repository.TagRepository
+import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -16,7 +19,8 @@ import org.springframework.transaction.annotation.Transactional
 class PerfumeServiceImpl(
     private val perfumeRepository: PerfumeRepository,
     private val tagRepository: TagRepository,
-    private val perfumeTagRepository: PerfumeTagRepository
+    private val perfumeTagRepository: PerfumeTagRepository,
+    private val memberRepository: MemberRepository
 ) : PerfumeService {
 
     @Transactional
@@ -58,6 +62,26 @@ class PerfumeServiceImpl(
         }
 
         perfumeTagRepository.saveAll(tagLinks)
+    }
+
+    @Transactional
+    override fun deletePerfume(
+        id: Long,
+        authentication: Authentication
+    ) {
+        val email = authentication.name
+        val member = (memberRepository.findByEmail(email)
+            ?: throw CustomException(ErrorCode.MEMBER_NOT_FOUND))
+
+        if (member.role != MemberRole.ROLE_ADMIN) {
+            throw CustomException(ErrorCode.FORBIDDEN)
+        }
+
+        val perfume = perfumeRepository.findById(id)
+            .orElseThrow { CustomException(ErrorCode.PERFUME_NOT_FOUND) }
+
+        perfumeTagRepository.deleteByPerfumeId(id)
+        perfumeRepository.deleteById(perfume.id)
     }
 
     override fun getPerfume(id: Long): PerfumeDto.PerfumeResponse {
