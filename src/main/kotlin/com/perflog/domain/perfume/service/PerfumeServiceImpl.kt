@@ -138,10 +138,10 @@ class PerfumeServiceImpl(
     }
 
     override fun getPerfume(id: Long): PerfumeDto.PerfumeResponse {
-        val perfume = perfumeRepository.findById(id)
+        val perfume = perfumeRepository.findWithTagsById(id)
             .orElseThrow { CustomException(ErrorCode.PERFUME_NOT_FOUND) }
 
-        val tags = perfumeTagRepository.findByPerfume(perfume).map { it.tag.name }
+        val tags = perfume.perfumeTags.map { it.tag.name }
 
         return PerfumeDto.PerfumeResponse(
             id = perfume.id,
